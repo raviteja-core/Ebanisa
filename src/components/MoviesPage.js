@@ -1,95 +1,83 @@
-import React, { useEffect, useState } from 'react';
-import { fetchPopularMovies } from '../api';
-import { Link } from 'react-router-dom';
+import React, { useEffect, useMemo, useState } from 'react';
+import { fetchMovieGenres, fetchPopularMovies } from '../api';
+import MediaCard from './MediaCard';
+
+const getDateValue = (value) => {
+  if (!value) return 0;
+  const parsed = Date.parse(value);
+  return Number.isNaN(parsed) ? 0 : parsed;
+};
 
 function MoviesPage() {
-    const [movies, setMovies] = useState([]);
-    const [filteredMovies, setFilteredMovies] = useState([]);
-    const [genres, setGenres] = useState([
-        { id: 28, name: 'Action' },
-        { id: 35, name: 'Comedy' },
-        { id: 18, name: 'Drama' },
-        { id: 878, name: 'Sci-Fi' },
-        { id: 27, name: 'Horror' },
-        { id: 12, name: 'Adventure' },
-        { id: 16, name: 'Animation' },
-        { id: 14, name: 'Fantasy' },
-        { id: 53, name: 'Thriller' },
-    ]);
-    const [selectedGenre, setSelectedGenre] = useState('');
-    const [sortOption, setSortOption] = useState('');
-    const [currentPage, setCurrentPage] = useState(1);
+  const [movies, setMovies] = useState([]);
+  const [genres, setGenres] = useState([]);
+  const [selectedGenre, setSelectedGenre] = useState('');
+  const [sortOption, setSortOption] = useState('');
+  const [currentPage, setCurrentPage] = useState(1);
 
-    useEffect(() => {
-        fetchPopularMovies(currentPage).then(data => {
-            setMovies(prevMovies => [...prevMovies, ...(data.results || [])]);
-        });
-    }, [currentPage]);
+  useEffect(() => {
+    fetchMovieGenres().then((data) => setGenres(data.genres || []));
+  }, []);
 
-    useEffect(() => {
-        let filtered = [...movies];
+  useEffect(() => {
+    fetchPopularMovies(currentPage).then((data) => {
+      const nextItems = data.results || [];
+      setMovies((prev) => {
+        const merged = [...prev, ...nextItems];
+        return merged.filter((item, index, arr) => index === arr.findIndex((x) => x.id === item.id));
+      });
+    });
+  }, [currentPage]);
 
-        // Filter by genre
-        if (selectedGenre) {
-            filtered = filtered.filter(movie => movie.genre_ids.includes(parseInt(selectedGenre)));
-        }
+  const visibleMovies = useMemo(() => {
+    let result = [...movies];
 
-        // Sort movies
-        if (sortOption === 'popularity') {
-            filtered.sort((a, b) => b.popularity - a.popularity);
-        } else if (sortOption === 'release_date') {
-            filtered.sort((a, b) => new Date(b.release_date) - new Date(a.release_date));
-        }
+    if (selectedGenre) {
+      const genreId = Number(selectedGenre);
+      result = result.filter((movie) => movie.genre_ids?.includes(genreId));
+    }
 
-        setFilteredMovies(filtered); // Update state with the filtered and sorted array
-    }, [movies, selectedGenre, sortOption]);
+    if (sortOption === 'popularity') {
+      result.sort((a, b) => (b.popularity || 0) - (a.popularity || 0));
+    } else if (sortOption === 'release_date') {
+      result.sort((a, b) => getDateValue(b.release_date) - getDateValue(a.release_date));
+    } else if (sortOption === 'rating') {
+      result.sort((a, b) => (b.vote_average || 0) - (a.vote_average || 0));
+    } else if (sortOption === 'title') {
+      result.sort((a, b) => (a.title || '').localeCompare(b.title || ''));
+    }
 
-    const loadMoreMovies = () => {
-        setCurrentPage(prevPage => prevPage + 1);
-    };
+    return result;
+  }, [movies, selectedGenre, sortOption]);
 
-    return (
-        <div className="movies-page">
-            <h1 className="page-title">🎬 Movies</h1>
-            <div className="sticky-filters filters">
-                <select onChange={e => setSelectedGenre(e.target.value)} value={selectedGenre} className="filter-select">
-                    <option value="">All Genres</option>
-                    {genres.map(genre => (
-                        <option key={genre.id} value={genre.id}>{genre.name}</option>
-                    ))}
-                </select>
-                <select onChange={e => setSortOption(e.target.value)} value={sortOption} className="filter-select">
-                    <option value="">Sort By</option>
-                    <option value="popularity">Popularity</option>
-                    <option value="release_date">Release Date</option>
-                </select>
-            </div>
-            <ul className="movie-grid modern-grid">
-                {filteredMovies.map(movie => (
-                    <li key={movie.id} className="movie-card modern-card">
-                        <div className="card-img-wrap">
-                            <img src={`https://image.tmdb.org/t/p/w300${movie.poster_path}`} alt={movie.title} className="modern-img" />
-                            <span className="rating-badge">{movie.vote_average}</span>
-                        </div>
-                        <div className="movie-info">
-                            <h3>{movie.title}</h3>
-                            <div className="genre-chips">
-                                {movie.genre_ids && movie.genre_ids.map(id => <span key={id} className="genre-chip">{id}</span>)}
-                            </div>
-                            <p className="release-year">{new Date(movie.release_date).getFullYear()}</p>
-                        </div>
-                        <div className="movie-hover modern-hover">
-                            <p>{movie.overview.slice(0, 100)}...</p>
-                            <Link to={`/movie/${movie.id}`}><button>View Details</button></Link>
-                        </div>
-                    </li>
-                ))}
-            </ul>
-            <div className="floating-load-more">
-                <button onClick={loadMoreMovies}>Load More</button>
-            </div>
-        </div>
-    );
+  return (
+    <div className="movies-page">
+      <h1 className="page-title">🎬 Movies</h1>
+      <div className="sticky-filters filters">
+        <select onChange={(e) => setSelectedGenre(e.target.value)} value={selectedGenre} className="filter-select">
+          <option value="">All Genres</option>
+          {genres.map((genre) => (
+            <option key={genre.id} value={genre.id}>{genre.name}</option>
+          ))}
+        </select>
+        <select onChange={(e) => setSortOption(e.target.value)} value={sortOption} className="filter-select">
+          <option value="">Sort By</option>
+          <option value="popularity">Popularity</option>
+          <option value="release_date">Release Date</option>
+          <option value="rating">Rating</option>
+          <option value="title">Title (A-Z)</option>
+        </select>
+      </div>
+      <ul className="media-grid">
+        {visibleMovies.map((movie) => (
+          <MediaCard key={movie.id} item={movie} linkTo={`/movie/${movie.id}`} />
+        ))}
+      </ul>
+      <div className="floating-load-more">
+        <button onClick={() => setCurrentPage((prev) => prev + 1)}>Load More</button>
+      </div>
+    </div>
+  );
 }
 
 export default MoviesPage;

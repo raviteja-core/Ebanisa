@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { fetchTrendingContent, fetchPopularMovies } from '../api';
+import { fetchTrendingContent, fetchPopularMovies, fetchMovieGenres } from '../api';
 import { Link } from 'react-router-dom';
 
 function HomePage() {
@@ -12,7 +12,7 @@ function HomePage() {
         fetchTrendingContent('movie', 'day').then(data => setHeroContent(data.results[0]));
         fetchTrendingContent('movie', 'day').then(data => setTrendingMovies(data.results || []));
         fetchPopularMovies().then(data => setPopularMovies(data.results || []));
-        fetchGenres().then(data => setGenres(data.genres || []));
+        fetchMovieGenres().then(data => setGenres(data.genres || []));
     }, []);
 
     return (

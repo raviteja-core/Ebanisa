@@ -1,166 +1,87 @@
-const API_KEY = "x";
+const API_KEY = process.env.REACT_APP_TMDB_API_KEY;
 const BASE_URL = 'https://api.themoviedb.org/3';
 
+let hasWarnedMissingApiKey = false;
+
+const buildUrl = (path, params = {}) => {
+  const searchParams = new URLSearchParams({
+    ...params,
+    api_key: API_KEY || '',
+  });
+
+  return `${BASE_URL}${path}?${searchParams.toString()}`;
+};
+
+const request = async (path, params = {}) => {
+  if (!API_KEY) {
+    if (!hasWarnedMissingApiKey) {
+      hasWarnedMissingApiKey = true;
+      // eslint-disable-next-line no-console
+      console.error('Missing REACT_APP_TMDB_API_KEY. Add it to your environment variables.');
+    }
+    return {};
+  }
+
+  try {
+    const response = await fetch(buildUrl(path, params));
+    if (!response.ok) {
+      // eslint-disable-next-line no-console
+      console.error(`TMDB request failed: ${response.status} ${response.statusText} (${path})`);
+      return {};
+    }
+
+    return await response.json();
+  } catch (error) {
+    // eslint-disable-next-line no-console
+    console.error(`TMDB request error (${path}):`, error);
+    return {};
+  }
+};
+
 // Configuration Data
-export async function fetchConfiguration() {
-    const response = await fetch(`${BASE_URL}/configuration?api_key=${API_KEY}`);
-    return response.json();
-}
+export const fetchConfiguration = () => request('/configuration');
 
 // Genre Lists
-export async function fetchMovieGenres() {
-    const response = await fetch(`${BASE_URL}/genre/movie/list?api_key=${API_KEY}`);
-    return response.json();
-}
-
-export async function fetchTVGenres() {
-    const response = await fetch(`${BASE_URL}/genre/tv/list?api_key=${API_KEY}`);
-    return response.json();
-}
+export const fetchMovieGenres = () => request('/genre/movie/list');
+export const fetchTVGenres = () => request('/genre/tv/list');
 
 // Movie Data
-export async function fetchPopularMovies(page = 1) {
-    const response = await fetch(`${BASE_URL}/movie/popular?api_key=${API_KEY}&page=${page}`);
-    return response.json();
-}
-
-export async function fetchTopRatedMovies(page = 1) {
-    const response = await fetch(`${BASE_URL}/movie/top_rated?api_key=${API_KEY}&page=${page}`);
-    return response.json();
-}
-
-export async function fetchUpcomingMovies(page = 1) {
-    const response = await fetch(`${BASE_URL}/movie/upcoming?api_key=${API_KEY}&page=${page}`);
-    return response.json();
-}
-
-export async function fetchNowPlayingMovies(page = 1) {
-    const response = await fetch(`${BASE_URL}/movie/now_playing?api_key=${API_KEY}&page=${page}`);
-    return response.json();
-}
-
-export async function fetchMovieDetail(id) {
-    const response = await fetch(`${BASE_URL}/movie/${id}?api_key=${API_KEY}`);
-    return response.json();
-}
-
-export async function fetchMovieCredits(id) {
-    const response = await fetch(`${BASE_URL}/movie/${id}/credits?api_key=${API_KEY}`);
-    return response.json();
-}
-
-export async function fetchMovieVideos(id) {
-    const response = await fetch(`${BASE_URL}/movie/${id}/videos?api_key=${API_KEY}`);
-    return response.json();
-}
-
-export async function fetchSimilarMovies(id) {
-    const response = await fetch(`${BASE_URL}/movie/${id}/similar?api_key=${API_KEY}`);
-    return response.json();
-}
+export const fetchPopularMovies = (page = 1) => request('/movie/popular', { page });
+export const fetchTopRatedMovies = (page = 1) => request('/movie/top_rated', { page });
+export const fetchUpcomingMovies = (page = 1) => request('/movie/upcoming', { page });
+export const fetchNowPlayingMovies = (page = 1) => request('/movie/now_playing', { page });
+export const fetchMovieDetail = (id) => request(`/movie/${id}`);
+export const fetchMovieCredits = (id) => request(`/movie/${id}/credits`);
+export const fetchMovieVideos = (id) => request(`/movie/${id}/videos`);
+export const fetchSimilarMovies = (id) => request(`/movie/${id}/similar`);
+export const fetchMovieRecommendations = (id) => request(`/movie/${id}/recommendations`);
 
 // TV Show Data
-export async function fetchPopularTVShows(page = 1) {
-    const response = await fetch(`${BASE_URL}/tv/popular?api_key=${API_KEY}&page=${page}`);
-    return response.json();
-}
-
-export async function fetchTopRatedTVShows(page = 1) {
-    const response = await fetch(`${BASE_URL}/tv/top_rated?api_key=${API_KEY}&page=${page}`);
-    return response.json();
-}
-
-export async function fetchAiringTodayTVShows(page = 1) {
-    const response = await fetch(`${BASE_URL}/tv/airing_today?api_key=${API_KEY}&page=${page}`);
-    return response.json();
-}
-
-export async function fetchOnTheAirTVShows(page = 1) {
-    const response = await fetch(`${BASE_URL}/tv/on_the_air?api_key=${API_KEY}&page=${page}`);
-    return response.json();
-}
-
-export async function fetchTVShowDetail(id) {
-    const response = await fetch(`${BASE_URL}/tv/${id}?api_key=${API_KEY}`);
-    return response.json();
-}
-
-export async function fetchTVShowCredits(id) {
-    const response = await fetch(`${BASE_URL}/tv/${id}/credits?api_key=${API_KEY}`);
-    return response.json();
-}
-
-export async function fetchTVShowVideos(id) {
-    const response = await fetch(`${BASE_URL}/tv/${id}/videos?api_key=${API_KEY}`);
-    return response.json();
-}
-
-export async function fetchSimilarTVShows(id) {
-    const response = await fetch(`${BASE_URL}/tv/${id}/similar?api_key=${API_KEY}`);
-    return response.json();
-}
+export const fetchPopularTVShows = (page = 1) => request('/tv/popular', { page });
+export const fetchTopRatedTVShows = (page = 1) => request('/tv/top_rated', { page });
+export const fetchAiringTodayTVShows = (page = 1) => request('/tv/airing_today', { page });
+export const fetchOnTheAirTVShows = (page = 1) => request('/tv/on_the_air', { page });
+export const fetchTVShowDetail = (id) => request(`/tv/${id}`);
+export const fetchTVShowCredits = (id) => request(`/tv/${id}/credits`);
+export const fetchTVShowVideos = (id) => request(`/tv/${id}/videos`);
+export const fetchSimilarTVShows = (id) => request(`/tv/${id}/similar`);
+export const fetchTVShowRecommendations = (id) => request(`/tv/${id}/recommendations`);
 
 // Search Functionality
-export async function searchMovies(query, page = 1) {
-    const response = await fetch(`${BASE_URL}/search/movie?api_key=${API_KEY}&query=${query}&page=${page}`);
-    return response.json();
-}
-
-export async function searchTVShows(query, page = 1) {
-    const response = await fetch(`${BASE_URL}/search/tv?api_key=${API_KEY}&query=${query}&page=${page}`);
-    return response.json();
-}
-
-export async function multiSearch(query, page = 1) {
-    const response = await fetch(`${BASE_URL}/search/multi?api_key=${API_KEY}&query=${query}&page=${page}`);
-    return response.json();
-}
+export const searchMovies = (query, page = 1) => request('/search/movie', { query, page });
+export const searchTVShows = (query, page = 1) => request('/search/tv', { query, page });
+export const multiSearch = (query, page = 1) => request('/search/multi', { query, page });
 
 // Trending and Discover
-export async function fetchTrendingContent(mediaType = 'all', timeWindow = 'day') {
-    const response = await fetch(`${BASE_URL}/trending/${mediaType}/${timeWindow}?api_key=${API_KEY}`);
-    return response.json();
-}
-
-export async function discoverMovies(params) {
-    const queryString = new URLSearchParams(params).toString();
-    const response = await fetch(`${BASE_URL}/discover/movie?api_key=${API_KEY}&${queryString}`);
-    return response.json();
-}
-
-export async function discoverTVShows(params) {
-    const queryString = new URLSearchParams(params).toString();
-    const response = await fetch(`${BASE_URL}/discover/tv?api_key=${API_KEY}&${queryString}`);
-    return response.json();
-}
+export const fetchTrendingContent = (mediaType = 'all', timeWindow = 'day') =>
+  request(`/trending/${mediaType}/${timeWindow}`);
+export const discoverMovies = (params) => request('/discover/movie', params);
+export const discoverTVShows = (params) => request('/discover/tv', params);
 
 // Optional / Extended Data
-export async function fetchMovieImages(id) {
-    const response = await fetch(`${BASE_URL}/movie/${id}/images?api_key=${API_KEY}`);
-    return response.json();
-}
-
-export async function fetchTVShowImages(id) {
-    const response = await fetch(`${BASE_URL}/tv/${id}/images?api_key=${API_KEY}`);
-    return response.json();
-}
-
-export async function fetchMovieExternalIDs(id) {
-    const response = await fetch(`${BASE_URL}/movie/${id}/external_ids?api_key=${API_KEY}`);
-    return response.json();
-}
-
-export async function fetchTVShowExternalIDs(id) {
-    const response = await fetch(`${BASE_URL}/tv/${id}/external_ids?api_key=${API_KEY}`);
-    return response.json();
-}
-
-export async function fetchMovieReviews(id, page = 1) {
-    const response = await fetch(`${BASE_URL}/movie/${id}/reviews?api_key=${API_KEY}&page=${page}`);
-    return response.json();
-}
-
-export async function fetchTVShowReviews(id, page = 1) {
-    const response = await fetch(`${BASE_URL}/tv/${id}/reviews?api_key=${API_KEY}&page=${page}`);
-    return response.json();
-}
+export const fetchMovieImages = (id) => request(`/movie/${id}/images`);
+export const fetchTVShowImages = (id) => request(`/tv/${id}/images`);
+export const fetchMovieExternalIDs = (id) => request(`/movie/${id}/external_ids`);
+export const fetchTVShowExternalIDs = (id) => request(`/tv/${id}/external_ids`);
+export const fetchMovieReviews = (id, page = 1) => request(`/movie/${id}/reviews`, { page });
+export const fetchTVShowReviews = (id, page = 1) => request(`/tv/${id}/reviews`, { page });

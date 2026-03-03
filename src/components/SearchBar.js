@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { multiSearch } from '../api';
-import { Link } from 'react-router-dom';
+import MediaCard from './MediaCard';
 
 function SearchBar() {
     const [query, setQuery] = useState('');
@@ -9,6 +9,12 @@ function SearchBar() {
     const [totalResults, setTotalResults] = useState(0);
     const [typingTimeout, setTypingTimeout] = useState(null);
 
+    useEffect(() => () => {
+        if (typingTimeout) {
+            clearTimeout(typingTimeout);
+        }
+    }, [typingTimeout]);
+
     const fetchResults = async (searchQuery, page = 1) => {
         if (searchQuery.trim() === '') {
             setResults([]);
@@ -16,10 +22,13 @@ function SearchBar() {
             return;
         }
         const data = await multiSearch(searchQuery, page);
+        const normalizedResults = (data.results || []).filter(item =>
+            item.id && (item.media_type === 'movie' || item.media_type === 'tv')
+        );
         if (page === 1) {
-            setResults(data.results || []);
+            setResults(normalizedResults);
         } else {
-            setResults(prevResults => [...prevResults, ...(data.results || [])]);
+            setResults(prevResults => [...prevResults, ...normalizedResults]);
         }
         setTotalResults(data.total_results || 0);
         setCurrentPage(page);
@@ -61,28 +70,22 @@ function SearchBar() {
             {/* Search Results */}
             <div className="search-results">
                 {results.length > 0 ? (
-                    <ul className="results-grid modern-grid">
+                    <>
+                    <ul className="media-grid">
                         {results.map(item => (
-                            <li key={item.id} className="movie-card modern-card">
-                                <div className="card-img-wrap">
-                                    <img
-                                        src={item.poster_path ? `https://image.tmdb.org/t/p/w300${item.poster_path}` : 'https://via.placeholder.com/200x300?text=No+Image'}
-                                        alt={item.title || item.name}
-                                        className="modern-img"
-                                    />
-                                    <span className="rating-badge">{item.vote_average}</span>
-                                </div>
-                                <div className="movie-info">
-                                    <h3>{item.title || item.name}</h3>
-                                    <div className="genre-chips">{item.genre_ids && item.genre_ids.map(id => <span key={id} className="genre-chip">{id}</span>)}</div>
-                                    <span>{item.release_date?.split('-')[0] || item.first_air_date?.split('-')[0]}</span>
-                                </div>
-                                <div className="movie-hover modern-hover">
-                                    <Link to={item.media_type === 'movie' ? `/movie/${item.id}` : `/tv/${item.id}`}><button>View Details</button></Link>
-                                </div>
-                            </li>
+                            <MediaCard
+                                key={`${item.media_type}-${item.id}`}
+                                item={item}
+                                linkTo={item.media_type === 'movie' ? `/movie/${item.id}` : `/tv/${item.id}`}
+                            />
                         ))}
                     </ul>
+                    {results.length < totalResults && (
+                        <div className="floating-load-more">
+                            <button onClick={loadMoreResults}>Load More Results</button>
+                        </div>
+                    )}
+                    </>
                 ) : (
                     <div className="no-results">
                         <img src="https://cdn-icons-png.flaticon.com/512/2748/2748558.png" alt="No results" />

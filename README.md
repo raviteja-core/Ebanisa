@@ -110,16 +110,41 @@ TMDB Movies is a React-based web application that allows users to browse, search
 ## Setup and Installation
 
 ### Prerequisites
-- Node.js (v14 or higher)
-- npm (v6 or higher)
+- Node.js 18 or higher
+- npm 9 or higher
 
-### Steps to Run the Project
+### Local Development
 1. Clone the repository:
    ```bash
    git clone https://github.com/your-username/tmdb-movies.git
    cd tmdb-movies
-2. Run `npm install` to install dependencies.
-3. Add your TMDB API key to the `.env` file.
-4. Run `npm start` to start the development server.
+   ```
+2. Install dependencies:
+   ```bash
+   npm install
+   ```
+3. Configure environment variables:
+   ```bash
+   cp .env.example .env
+   ```
+   Then set `REACT_APP_TMDB_API_KEY` in `.env`.
+4. Start development server:
+   ```bash
+   npm start
+   ```
 
+## Vercel Deployment
+1. Push this repository to GitHub/GitLab/Bitbucket.
+2. Import the project in Vercel.
+3. In Vercel project settings, add environment variable:
+   - `REACT_APP_TMDB_API_KEY`: your TMDB v3 API key
+4. Deploy with these defaults:
+   - Framework Preset: `Create React App`
+   - Build Command: `npm run build`
+   - Output Directory: `build`
+
+`vercel.json` is included for:
+- SPA route rewrites to `index.html`
+- baseline security headers
+- long-term caching for static assets
 
